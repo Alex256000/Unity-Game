@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Enemy
+  - Ground
+  - Wall
+  - Collectable
+  - Coin
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - Wall
+  - Ground
+  - Enemy
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: BackGround
+    uniqueID: 1689405259
+    locked: 0
+  - name: Second Objects
+    uniqueID: 131992331
+    locked: 0
+  - name: Objects
+    uniqueID: 4009127861
+    locked: 0
+  - name: particls
+    uniqueID: 4106497549
+    locked: 0
+  - name: New Layer 6
+    uniqueID: 2631940307
+    locked: 0
+  - name: UI
+    uniqueID: 2844977465
+    locked: 0
+  - name: Default
+    uniqueID: 0
+    locked: 0
