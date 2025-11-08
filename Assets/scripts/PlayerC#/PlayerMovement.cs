@@ -79,6 +79,11 @@ public class PlayerMovement : MonoBehaviour
     private float knockbackTimer = 0f;
     // =========================
 
+    // --- Новые поля для управления внешними блокировками/автодвижением ---
+    private bool inputEnabled = true;         // публичный API через SetInputEnabled управляет этим
+    private Vector2 autoMoveDir = Vector2.zero; // если не zero — приоритет при движении
+    // -------------------------------------------------------------------
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -135,8 +140,11 @@ public class PlayerMovement : MonoBehaviour
         if (isKnockedBack)
             return;
 
-        if (moveAction != null)
+        // Читаем ввод только если включён inputEnabled. Если выключен — не читаем, но логика прыжков/таймеров остаётся.
+        if (inputEnabled && moveAction != null)
             moveInput = moveAction.ReadValue<Vector2>();
+        else
+            moveInput = Vector2.zero;
 
         // --- Coyote Time: обновляем таймер прощения прыжка ---
         if (isGrounded)
@@ -166,6 +174,13 @@ public class PlayerMovement : MonoBehaviour
             _isFacingRight = moveInput.x > 0;
         }
 
+        // Если авто-движение задано (например, при переходе между сценами), учитываем направление для спрайта
+        if (autoMoveDir != Vector2.zero)
+        {
+            _lastWallCheckDirection = Mathf.Sign(autoMoveDir.x != 0 ? autoMoveDir.x : _lastWallCheckDirection);
+            _isFacingRight = (_lastWallCheckDirection > 0);
+        }
+
         // --- Управление поворотом спрайта ---
         if (_spriteRenderer != null)
         {
@@ -190,7 +205,6 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // --- Исполнение прыжка по jumpBuffer и coyoteTime ---
-        // Прыгнуть, если был input (jumpBufferCounter > 0) и разрешён coyoteTime
         if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f && !isJumping && !isWallSliding && !_isWallJumping)
         {
             DoGroundJump();
@@ -207,7 +221,7 @@ public class PlayerMovement : MonoBehaviour
             if (knockbackTimer <= 0f)
             {
                 isKnockedBack = false;
-                if (moveAction != null)
+                if (moveAction != null && inputEnabled)
                     moveAction.Enable();
             }
             return;
@@ -235,6 +249,10 @@ public class PlayerMovement : MonoBehaviour
     private void CheckWalls()
     {
         float direction = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : 0;
+        // Если авто-движение активно, используем его направление для определения столкновения со стеной
+        if (autoMoveDir != Vector2.zero)
+            direction = Mathf.Sign(autoMoveDir.x);
+
         if (direction == 0)
         {
             isTouchingWall = false;
@@ -264,7 +282,13 @@ public class PlayerMovement : MonoBehaviour
     {
         if (_isWallJumping) return;
 
-        float horizontalInput = moveInput.x;
+        // Если авто-движение задано — оно имеет приоритет над вводом игрока
+        float horizontalInput = 0f;
+        if (autoMoveDir != Vector2.zero)
+            horizontalInput = autoMoveDir.x;
+        else
+            horizontalInput = moveInput.x;
+
         if (isWallSliding && Mathf.Sign(horizontalInput) == _lastWallCheckDirection)
         {
             horizontalInput = 0;
@@ -320,6 +344,10 @@ public class PlayerMovement : MonoBehaviour
     private void HandleWallSlide()
     {
         bool isPushingWall = Mathf.Sign(moveInput.x) == _lastWallCheckDirection;
+        // Учесть autoMoveDir при скольжении
+        if (autoMoveDir != Vector2.zero)
+            isPushingWall = Mathf.Sign(autoMoveDir.x) == _lastWallCheckDirection;
+
         bool shouldSlide = isTouchingWall && !isGrounded && rb.velocity.y <= 0 && isPushingWall;
 
         if (shouldSlide)
@@ -333,8 +361,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
     // === Knockback Method ===
-        /// Применить отскок от урона (диагональ назад-вверх)
-    
+    /// Применить отскок от урона (диагональ назад-вверх)
     public void ApplyKnockback(Vector2 hitDirection)
     {
         if (rb == null) return;
@@ -345,16 +372,27 @@ public class PlayerMovement : MonoBehaviour
         isKnockedBack = true;
         knockbackTimer = knockbackDuration;
 
-        bool wasEnabled = moveAction?.enabled ?? false;
+        bool wasEnabled = inputEnabled;
 
         if (moveAction != null)
         {
             moveAction.Disable();
             // FIX: Проверяем, что MonoBehaviour для корутины
             if (this is MonoBehaviour mono)
-                mono.StartCoroutine(ReenableMovement(wasEnabled));
+                mono.StartCoroutine(ReenableMovementAfterKnockback(wasEnabled));
             else
                 Debug.LogError("PlayerMovement must inherit MonoBehaviour for coroutines!");
+        }
+    }
+
+    private IEnumerator ReenableMovementAfterKnockback(bool wasEnabled)
+    {
+        yield return new WaitForSeconds(knockbackDuration);
+        if (moveAction != null && wasEnabled)
+        {
+            // Восстанавливаем состояние ввода (только если внешняя блокировка не установлена)
+            if (inputEnabled)
+                moveAction.Enable();
         }
     }
 
@@ -366,25 +404,47 @@ public class PlayerMovement : MonoBehaviour
             moveAction.Enable();
         }
     }
-    
+
     /// Можно ли сейчас управлять движением игрока (например, для других скриптов)
     public bool CanMove()
     {
-        return !isKnockedBack;
+        return !isKnockedBack && inputEnabled;
     }
-        /// Отдача от атаки (эффект Hollow Knight)
-    
+    /// Отдача от атаки (эффект Hollow Knight)
     public void ApplyAttackKnockback(Vector2 direction, float force)
     {
         rb.velocity = new Vector2(0, rb.velocity.y); // Сбросить горизонтальную скорость, сохранить вертикальную
         rb.AddForce(direction.normalized * force, ForceMode2D.Impulse);
     }
-        /// Находится ли игрок на земле
+    /// Находится ли игрок на земле
     public bool IsGrounded()
     {
         return isGrounded;
     }
-    // =======================
+
+    // ---------------- API методы, которые зовёт внешняя логика (PlayerCross и т.п.) ----------------
+    /// Включает/выключает чтение ввода в этом компоненте.
+    /// false — внешний код запрещает игроку контролировать персонажа.
+    public void SetInputEnabled(bool enabled)
+    {
+        inputEnabled = enabled;
+        if (moveAction != null)
+        {
+            if (enabled)
+                moveAction.Enable();
+            else
+                moveAction.Disable();
+        }
+    }
+
+    /// Устанавливает автоматическое движение (приоритет перед вводом).
+    /// Передать Vector2.zero чтобы отключить авто-движение.
+    public void SetAutoMove(Vector2 dir)
+    {
+        autoMoveDir = dir;
+    }
+    // ---------------------------------------------------------------------------------------------
+
     #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {

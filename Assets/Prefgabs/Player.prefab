@@ -45,7 +45,6 @@ GameObject:
   - component: {fileID: 6753712684060820285}
   - component: {fileID: 2221882015567414419}
   - component: {fileID: 3019175273516815407}
-  - component: {fileID: 1616878275654731675}
   - component: {fileID: 666896049367718119}
   - component: {fileID: 8662976033311743182}
   - component: {fileID: 5248380080370368445}
@@ -261,18 +260,6 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
---- !u!114 &1616878275654731675
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9092573931736880314}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5a9dd07ab33eb994a80aab5b8ed85da2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &666896049367718119
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -287,6 +274,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1
   currentHealth: 0
+  invulTime: 0.6
 --- !u!114 &8662976033311743182
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -301,6 +289,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 5
   jumpForce: 10
+  jumpHoldForce: 5
+  jumpTimeMax: 0.35
+  coyoteTimeMax: 0.15
+  jumpBufferMax: 0.1
   groundCheckSize: {x: 0.65, y: -0.2}
   groundCheckOffset: {x: 0, y: -0.95}
   groundLayer:
@@ -319,6 +311,9 @@ MonoBehaviour:
   wallJumpForceX: 7
   wallJumpForceY: 15
   _spriteRenderer: {fileID: 6525403406017363644}
+  knockbackForce: 10
+  knockbackUpFactor: 0.7
+  knockbackDuration: 0.25
 --- !u!114 &5248380080370368445
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -339,3 +334,8 @@ MonoBehaviour:
     m_Bits: 512
   attackOffsetRight: {x: 0.5, y: 0}
   attackOffsetLeft: {x: -0.5, y: 0}
+  attackAreaSprite: {fileID: 0}
+  attackVisualDuration: 0.15
+  attackCooldown: 0.4
+  knockbackOnGround: 2
+  knockbackInAir: 6
