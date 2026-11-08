@@ -122,7 +122,7 @@ public class RespawnPointInteractive : MonoBehaviour
 
     private void ActivateSequence()
     {
-        if (activated) return;
+        if (activated || Time.timeScale <= 0f) return;
         activated = true;
 
         UnsubscribeInteract();
@@ -159,7 +159,7 @@ public class RespawnPointInteractive : MonoBehaviour
         // 1. Сохраняем чекпоинт в RespawnManager (для возрождения после смерти)
         if (RespawnManager.Instance != null)
         {
-            RespawnManager.Instance.SetCheckpoint(transform.position);
+            RespawnManager.Instance.RegisterActivatedCheckpoint(transform.position);
             Debug.Log($"[RespawnPointInteractive] Чекпоинт установлен в RespawnManager: {transform.position}");
         }
         else
@@ -197,7 +197,27 @@ public class RespawnPointInteractive : MonoBehaviour
         int currentSlot = PlayerPrefs.GetInt("CurrentSaveSlot", saveSlot);
     
         SaveData data = saveHandler.CollectSaveData();
+
+        if (data == null)
+        {
+            Debug.LogError(
+                "[RespawnPointInteractive] Не удалось собрать " +
+                "данные для сохранения."
+            );
+
+            return;
+        }
+
+        // При обычном сохранении на чекпоинте
+        // появляемся в точке чекпоинта, а не на краю его триггера.
+        Vector3 checkpoint = transform.position;
+
+        data.posX = checkpoint.x;
+        data.posY = checkpoint.y;
+        data.posZ = checkpoint.z;
+
         SaveManager.Instance.SaveGame(currentSlot, data);
+
 
         Debug.Log($"[RespawnPointInteractive] Игра сохранена в слот {currentSlot}.");
     }

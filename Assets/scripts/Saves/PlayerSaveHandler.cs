@@ -91,6 +91,15 @@ public class PlayerSaveHandler : MonoBehaviour
         // Восстанавливаем точное значение, а не только положительную разницу.
         playerSoul.SetSoul(data.souls);
 
+        // Восстанавливаем отдельно от координат появления:
+        // позиция сохранения не обязательно является чекпоинтом.
+        if (RespawnManager.Instance != null)
+        {
+            RespawnManager.Instance
+                .RestoreActivatedCheckpointFromSave(data);
+        }
+
+
         // --- Инвентарь: заготовка для будущей системы ---
         // if (InventoryManager.Instance != null)
         // {
@@ -126,6 +135,22 @@ public class PlayerSaveHandler : MonoBehaviour
             health = playerHealth.currentHealth,
             souls = playerSoul.GetCurrentSoul()
         };
+
+        // Запоминаем только настоящий активированный чекпоинт
+        // текущей локации, а не произвольную позицию игрока.
+        RespawnManager respawns = RespawnManager.Instance;
+
+        if (respawns != null &&
+            respawns.TryGetActivatedCheckpointInActiveScene(
+                out Vector3 checkpoint))
+        {
+            data.hasActivatedCheckpoint = true;
+            data.activatedCheckpointScene = data.sceneName;
+            data.activatedCheckpointX = checkpoint.x;
+            data.activatedCheckpointY = checkpoint.y;
+            data.activatedCheckpointZ = checkpoint.z;
+        }
+
 
         // --- Инвентарь: заготовка для будущей системы ---
         // data.inventoryItems = InventoryManager.Instance?.GetAllItems()

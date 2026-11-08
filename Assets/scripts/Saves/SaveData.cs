@@ -8,6 +8,14 @@ public class SaveData
     // --- Сцена и позиция ---
     public string sceneName;
     public float posX, posY, posZ;
+    // --- Последний активированный чекпоинт сцены сохранения ---
+    // Эти координаты хранятся отдельно от позиции появления игрока.
+    public bool hasActivatedCheckpoint;
+    public string activatedCheckpointScene;
+    public float activatedCheckpointX;
+    public float activatedCheckpointY;
+    public float activatedCheckpointZ;
+
 
     // --- Здоровье ---
     public int health;

@@ -18,6 +18,13 @@ public class RespawnManager : MonoBehaviour
     private string checkpointScene = "";
     private Vector3 checkpointPosition;
     private bool hasCheckpoint;
+    // Отдельные сведения для выбора безопасной позиции сохранения.
+    // Обычный SetCheckpoint() не считается активацией чекпоинта.
+    private bool hasActivatedCheckpoint;
+    private string activatedCheckpointScene = "";
+    private int activatedCheckpointSceneHandle = -1;
+    private Vector3 activatedCheckpointPosition;
+
 
     private void Awake()
     {
@@ -45,14 +52,99 @@ public class RespawnManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Сбросить чекпоинт при завершении игровой сессии.
+    /// Сбросить точки возрождения и сохранения
+    /// при завершении игровой сессии.
     /// </summary>
     public void ClearCheckpoint()
     {
         hasCheckpoint = false;
         checkpointScene = "";
         checkpointPosition = Vector3.zero;
+
+        ClearActivatedCheckpoint();
     }
+
+    /// <summary>
+    /// Вызывается при фактической активации чекпоинта.
+    /// Обновляет обычное возрождение и отдельную точку сохранения.
+    /// </summary>
+    public void RegisterActivatedCheckpoint(Vector3 worldPosition)
+    {
+        Scene scene = SceneManager.GetActiveScene();
+
+        hasActivatedCheckpoint = true;
+        activatedCheckpointScene = scene.name;
+        activatedCheckpointSceneHandle = scene.handle;
+        activatedCheckpointPosition = worldPosition;
+
+        // Сохраняем прежнее поведение возрождения.
+        SetCheckpoint(worldPosition);
+    }
+
+    /// <summary>
+    /// Возвращает активированный чекпоинт только текущего
+    /// загруженного экземпляра локации.
+    /// </summary>
+    public bool TryGetActivatedCheckpointInActiveScene(
+        out Vector3 worldPosition)
+    {
+        worldPosition = Vector3.zero;
+
+        Scene scene = SceneManager.GetActiveScene();
+
+        if (!scene.IsValid() ||
+            !scene.isLoaded ||
+            !hasActivatedCheckpoint ||
+            activatedCheckpointScene != scene.name ||
+            activatedCheckpointSceneHandle != scene.handle)
+        {
+            return false;
+        }
+
+        worldPosition = activatedCheckpointPosition;
+        return true;
+    }
+
+    /// <summary>
+    /// Восстанавливает сведения о чекпоинте из сохранения.
+    /// Самого игрока не перемещает и правила смерти не меняет.
+    /// </summary>
+    public void RestoreActivatedCheckpointFromSave(SaveData data)
+    {
+        ClearActivatedCheckpoint();
+
+        if (data == null || !data.hasActivatedCheckpoint)
+            return;
+
+        Scene scene = SceneManager.GetActiveScene();
+
+        if (!scene.IsValid() ||
+            !scene.isLoaded ||
+            data.sceneName != scene.name ||
+            data.activatedCheckpointScene != scene.name)
+        {
+            return;
+        }
+
+        hasActivatedCheckpoint = true;
+        activatedCheckpointScene = scene.name;
+        activatedCheckpointSceneHandle = scene.handle;
+
+        activatedCheckpointPosition = new Vector3(
+            data.activatedCheckpointX,
+            data.activatedCheckpointY,
+            data.activatedCheckpointZ
+        );
+    }
+
+    private void ClearActivatedCheckpoint()
+    {
+        hasActivatedCheckpoint = false;
+        activatedCheckpointScene = "";
+        activatedCheckpointSceneHandle = -1;
+        activatedCheckpointPosition = Vector3.zero;
+    }
+
 
     public void RespawnPlayer(GameObject player)
     {
