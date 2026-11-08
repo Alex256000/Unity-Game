@@ -5,7 +5,7 @@ public static class CreateCheckpointEditor
 {
     private const string menuRoot = "Tools/Create Checkpoint";
 
-    [MenuItem(menuRoot)]
+    [MenuItem(menuRoot + "/Default")]
     public static void CreateDefaultCheckpoint()
     {
         CreateCheckpoint(interactive: true, activateOnTouch: false);
