@@ -9,6 +9,8 @@ TagManager:
   - Wall
   - Collectable
   - Coin
+  - CameraBounds
+  - SpawnPoint
   layers:
   - Default
   - TransparentFX
@@ -20,8 +22,8 @@ TagManager:
   - Wall
   - Ground
   - Enemy
-  - 
-  - 
+  - BackGround
+  - Bounds
   - 
   - 
   - 
@@ -49,14 +51,14 @@ TagManager:
   - name: Second Objects
     uniqueID: 131992331
     locked: 0
+  - name: New Layer 6
+    uniqueID: 2631940307
+    locked: 0
   - name: Objects
     uniqueID: 4009127861
     locked: 0
   - name: particls
     uniqueID: 4106497549
-    locked: 0
-  - name: New Layer 6
-    uniqueID: 2631940307
     locked: 0
   - name: UI
     uniqueID: 2844977465
